@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Marketplace {
+  AMAZON
+  MERCADO_LIVRE
+}
+
+enum OfferStatus {
+  DRAFT
+  APPROVED
+  ARCHIVED
+}
+
+enum DestinationChannel {
+  TELEGRAM
+  WHATSAPP
+}
+
+enum PublicationStatus {
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+  UNKNOWN
+  CANCELLED
+}
+
+model Admin {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  passwordHash String
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model Offer {
+  id                 String        @id @default(uuid()) @db.Uuid
+  marketplace        Marketplace
+  productId          String?
+  fingerprint        String        @unique
+  title              String
+  affiliateUrl       String
+  imageUrl           String?
+  currentPriceCents  Int
+  originalPriceCents Int?
+  coupon             String?
+  category           String?
+  headline           String
+  description        String
+  status             OfferStatus   @default(DRAFT)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  publications       Publication[]
+
+  @@index([status, createdAt])
+  @@index([marketplace, productId])
+}
+
+model Destination {
+  id           String             @id @default(uuid()) @db.Uuid
+  channel      DestinationChannel
+  name         String
+  externalId   String
+  enabled      Boolean            @default(true)
+  deletedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  publications Publication[]
+
+  @@unique([channel, externalId])
+  @@index([deletedAt, enabled])
+}
+
+model Publication {
+  id                String            @id @default(uuid()) @db.Uuid
+  offerId           String            @db.Uuid
+  destinationId     String            @db.Uuid
+  scheduledAt       DateTime
+  status            PublicationStatus @default(SCHEDULED)
+  attempts          Int               @default(0)
+  externalMessageId String?
+  error              String?
+  sentAt             DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  offer              Offer             @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  destination        Destination       @relation(fields: [destinationId], references: [id], onDelete: Restrict)
+
+  @@index([status, scheduledAt])
+  @@index([offerId])
+  @@index([destinationId])
+}
+
+model IntegrationSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  adminId   String?  @db.Uuid
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  admin     Admin?   @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+}

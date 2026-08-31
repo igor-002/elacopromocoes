@@ -1,0 +1,25 @@
+{
+  "name": "radar-de-ofertas",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @radar/contracts && npm run build -w @radar/api && npm run build -w @radar/admin",
+    "check": "npm run check -w @radar/contracts && npm run check -w @radar/api && npm run check -w @radar/admin",
+    "dev": "concurrently -n api,admin -c blue,magenta \"npm run dev -w @radar/api\" \"npm run dev -w @radar/admin\"",
+    "test": "npm run test -w @radar/contracts && npm run test -w @radar/api && npm run test -w @radar/admin",
+    "db:generate": "npm run db:generate -w @radar/api",
+    "db:migrate": "npm run db:migrate -w @radar/api",
+    "db:studio": "npm run db:studio -w @radar/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
