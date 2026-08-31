@@ -192,9 +192,9 @@ code, time, .price-line, .preview-price, .metric strong, .attempt-count { font-f
 .field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: var(--ink); font-size: 0.78rem; font-weight: 650; }
 .field-label { display: flex; justify-content: space-between; gap: 10px; }
 .field-label small, .field > span small { color: var(--muted); font-size: 0.65rem; font-weight: 400; }
-.field input, .field textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cbd3cf; border-radius: 9px; outline: 0; background: white; color: var(--ink); transition: 160ms ease; }
+.field input, .field textarea, .field select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cbd3cf; border-radius: 9px; outline: 0; background: white; color: var(--ink); transition: 160ms ease; }
 .field textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
-.field input:focus, .field textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(36, 87, 245, 0.1); }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(36, 87, 245, 0.1); }
 .input-with-icon { position: relative; }
 .input-with-icon input { padding-right: 38px; }
 .input-with-icon svg { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: var(--muted); }

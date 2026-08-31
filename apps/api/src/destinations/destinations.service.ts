@@ -24,6 +24,14 @@ export class DestinationsService {
     return destinations.map(toDestinationDto);
   }
 
+  evolutionStatus() {
+    return this.delivery.getEvolutionStatus();
+  }
+
+  evolutionGroups() {
+    return this.delivery.listEvolutionGroups();
+  }
+
   async get(id: string): Promise<DestinationDto> {
     return toDestinationDto(await this.find(id));
   }

@@ -24,6 +24,16 @@ export class DestinationsController {
     return this.destinations.list();
   }
 
+  @Get('evolution/status')
+  evolutionStatus() {
+    return this.destinations.evolutionStatus();
+  }
+
+  @Get('evolution/groups')
+  evolutionGroups() {
+    return this.destinations.evolutionGroups();
+  }
+
   @Get(':id')
   get(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.destinations.get(id);

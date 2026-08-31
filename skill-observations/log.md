@@ -23,3 +23,5 @@ Observations captured during task-oriented work.
 **Suggested improvement:** Require `ss -lntp` and container port inspection before deployment, then select either standalone TLS termination or a loopback-only application override behind the existing host proxy.
 
 **Principle:** Discover port ownership and proxy boundaries before deploying a web stack into any control-panel-managed server.
+
+- 2026-08-31 Evolution readiness checkpoint: no observations.

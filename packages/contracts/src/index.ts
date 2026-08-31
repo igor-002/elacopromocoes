@@ -152,6 +152,23 @@ export interface DestinationDto {
   updatedAt: string;
 }
 
+export type EvolutionConnectionStatus =
+  | 'disabled'
+  | 'connected'
+  | 'connecting'
+  | 'disconnected'
+  | 'unavailable';
+
+export interface EvolutionStatusDto {
+  status: EvolutionConnectionStatus;
+  instance: string | null;
+}
+
+export interface EvolutionGroupDto {
+  id: string;
+  name: string;
+}
+
 export interface PublicationDto {
   id: string;
   offerId: string;

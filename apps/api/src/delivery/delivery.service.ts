@@ -1,5 +1,6 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { EvolutionGroupDto, EvolutionStatusDto } from '@radar/contracts';
 import type { Destination, Offer } from '@prisma/client';
 import { formatPublicationMessage } from './message-template';
 
@@ -38,6 +39,57 @@ export class DeliveryService {
     );
   }
 
+  async getEvolutionStatus(): Promise<EvolutionStatusDto> {
+    const config = this.evolutionConfig();
+    if (!config) return { status: 'disabled', instance: null };
+
+    try {
+      const payload = await requestJson(
+        `${config.baseUrl}/instance/connectionState/${encodeURIComponent(config.instance)}`,
+        { headers: { apikey: config.apiKey } },
+        5_000,
+      );
+      const state = (payload as { instance?: { state?: string } }).instance?.state;
+      return {
+        status: state === 'open' ? 'connected' : state === 'connecting' ? 'connecting' : 'disconnected',
+        instance: config.instance,
+      };
+    } catch {
+      return { status: 'unavailable', instance: config.instance };
+    }
+  }
+
+  async listEvolutionGroups(): Promise<EvolutionGroupDto[]> {
+    const config = this.evolutionConfig();
+    if (!config) throw new BadGatewayException('Evolution API não configurada.');
+
+    const connection = await this.getEvolutionStatus();
+    if (connection.status !== 'connected') {
+      throw new BadGatewayException('Conecte a instância do WhatsApp antes de buscar os grupos.');
+    }
+
+    const payload = await requestJson(
+      `${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(config.instance)}?getParticipants=false`,
+      { headers: { apikey: config.apiKey } },
+    );
+    if (!Array.isArray(payload)) {
+      throw new BadGatewayException('A Evolution API retornou grupos inválidos.');
+    }
+
+    return payload
+      .flatMap((value): EvolutionGroupDto[] => {
+        if (!value || typeof value !== 'object') return [];
+        const group = value as { id?: unknown; subject?: unknown };
+        if (typeof group.id !== 'string' || !group.id.endsWith('@g.us')) return [];
+        const name =
+          typeof group.subject === 'string' && group.subject.trim()
+            ? group.subject.trim()
+            : group.id;
+        return [{ id: group.id, name }];
+      })
+      .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
+  }
+
   private async sendTelegram(chatId: string, offer: Offer): Promise<DeliveryResult> {
     const caption = formatPublicationMessage(offer);
     return offer.imageUrl
@@ -73,26 +125,34 @@ export class DeliveryService {
   }
 
   private async evolutionRequest(method: string, body: Record<string, unknown>): Promise<DeliveryResult> {
-    const baseUrl = this.config.get<string>('EVOLUTION_API_URL')?.replace(/\/+$/, '');
-    const apiKey = this.config.get<string>('EVOLUTION_API_KEY');
-    const instance = this.config.get<string>('EVOLUTION_INSTANCE');
-    if (!baseUrl || !apiKey || !instance) {
+    const config = this.evolutionConfig();
+    if (!config) {
       throw new BadGatewayException('Evolution API não configurada.');
     }
 
-    const payload = await requestJson(`${baseUrl}/message/${method}/${encodeURIComponent(instance)}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', apikey: apiKey },
-      body: JSON.stringify(body),
-    });
+    const payload = await requestJson(
+      `${config.baseUrl}/message/${method}/${encodeURIComponent(config.instance)}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', apikey: config.apiKey },
+        body: JSON.stringify(body),
+      },
+    );
     const result = payload as { key?: { id?: string }; messageId?: string; id?: string };
     return { externalMessageId: result.key?.id ?? result.messageId ?? result.id ?? null };
   }
+
+  private evolutionConfig(): { baseUrl: string; apiKey: string; instance: string } | null {
+    const baseUrl = this.config.get<string>('EVOLUTION_API_URL')?.replace(/\/+$/, '');
+    const apiKey = this.config.get<string>('EVOLUTION_API_KEY');
+    const instance = this.config.get<string>('EVOLUTION_INSTANCE');
+    return baseUrl && apiKey && instance ? { baseUrl, apiKey, instance } : null;
+  }
 }
 
-async function requestJson(url: string, init: RequestInit): Promise<unknown> {
+async function requestJson(url: string, init: RequestInit, timeoutMs = 20_000): Promise<unknown> {
   try {
-    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
+    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
     const text = await response.text();
     let payload: unknown = {};
     try {

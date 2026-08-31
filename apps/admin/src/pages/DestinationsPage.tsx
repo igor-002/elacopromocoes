@@ -1,6 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateDestinationInput, DestinationChannel, DestinationDto } from '@radar/contracts';
+import type {
+  CreateDestinationInput,
+  DestinationChannel,
+  DestinationDto,
+  EvolutionGroupDto,
+  EvolutionStatusDto,
+} from '@radar/contracts';
 import { CheckCircle2, MessageCircle, Plus, RadioTower, Send, Trash2, Wifi } from 'lucide-react';
 import { EmptyState, ErrorState, InlineNotice, LoadingRows } from '../components/Feedback';
 import { PageHeader } from '../components/PageHeader';
@@ -15,6 +21,16 @@ export function DestinationsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const destinations = useQuery({ queryKey: ['destinations'], queryFn: () => api.get<DestinationDto[]>('/destinations') });
+  const evolutionStatus = useQuery({
+    queryKey: ['destinations', 'evolution', 'status'],
+    queryFn: () => api.get<EvolutionStatusDto>('/destinations/evolution/status'),
+    refetchInterval: showForm && channel === 'WHATSAPP' ? 15_000 : false,
+  });
+  const evolutionGroups = useQuery({
+    queryKey: ['destinations', 'evolution', 'groups'],
+    queryFn: () => api.get<EvolutionGroupDto[]>('/destinations/evolution/groups'),
+    enabled: showForm && channel === 'WHATSAPP' && evolutionStatus.data?.status === 'connected',
+  });
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['destinations'] });
   const create = useMutation({
     mutationFn: (input: CreateDestinationInput) => api.post<DestinationDto>('/destinations', input),
@@ -38,6 +54,11 @@ export function DestinationsPage() {
     create.mutate({ channel, name, externalId, enabled: true });
   }
 
+  function selectChannel(nextChannel: DestinationChannel) {
+    setChannel(nextChannel);
+    setExternalId('');
+  }
+
   return (
     <div className="page-stack">
       <PageHeader eyebrow="Canais de saída" title="Destinos" description="Defina os grupos e canais que podem receber publicações." action={<button className="button primary" onClick={() => setShowForm((value) => !value)}><Plus size={18} />{showForm ? 'Fechar cadastro' : 'Novo destino'}</button>} />
@@ -47,12 +68,50 @@ export function DestinationsPage() {
       {showForm && <form className="panel destination-form" onSubmit={submit}>
         <div className="panel-header"><div><p className="eyebrow">Novo ponto de entrega</p><h2>Conectar destino</h2></div></div>
         <div className="channel-choice" role="group" aria-label="Canal">
-          <button type="button" className={channel === 'TELEGRAM' ? 'selected' : ''} onClick={() => setChannel('TELEGRAM')} aria-pressed={channel === 'TELEGRAM'}><Send size={21} /><span><strong>Telegram</strong><small>Bot API oficial</small></span>{channel === 'TELEGRAM' && <CheckCircle2 size={18} />}</button>
-          <button type="button" className={channel === 'WHATSAPP' ? 'selected' : ''} onClick={() => setChannel('WHATSAPP')} aria-pressed={channel === 'WHATSAPP'}><MessageCircle size={21} /><span><strong>WhatsApp</strong><small>Evolution API</small></span>{channel === 'WHATSAPP' && <CheckCircle2 size={18} />}</button>
+          <button type="button" className={channel === 'TELEGRAM' ? 'selected' : ''} onClick={() => selectChannel('TELEGRAM')} aria-pressed={channel === 'TELEGRAM'}><Send size={21} /><span><strong>Telegram</strong><small>Bot API oficial</small></span>{channel === 'TELEGRAM' && <CheckCircle2 size={18} />}</button>
+          <button type="button" className={channel === 'WHATSAPP' ? 'selected' : ''} onClick={() => selectChannel('WHATSAPP')} aria-pressed={channel === 'WHATSAPP'}><MessageCircle size={21} /><span><strong>WhatsApp</strong><small>Evolution API</small></span>{channel === 'WHATSAPP' && <CheckCircle2 size={18} />}</button>
         </div>
+        {channel === 'WHATSAPP' && (
+          <InlineNotice tone={evolutionStatus.data?.status === 'connected' ? 'success' : 'info'}>
+            {evolutionStatus.isPending
+              ? 'Verificando a conexão da Evolution API…'
+              : evolutionStatusMessage(evolutionStatus.data)}
+          </InlineNotice>
+        )}
+        {channel === 'WHATSAPP' && evolutionGroups.isError && (
+          <InlineNotice tone="danger">{errorMessage(evolutionGroups.error)}</InlineNotice>
+        )}
         <div className="field-grid">
           <label className="field"><span>Nome para identificar</span><input value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={80} placeholder="Ex.: Ofertas de tecnologia" required /></label>
-          <label className="field"><span>ID externo <small>{channel === 'TELEGRAM' ? 'Ex.: -100123…' : 'ID do grupo'}</small></span><input value={externalId} onChange={(event) => setExternalId(event.target.value)} minLength={2} maxLength={160} required /></label>
+          {channel === 'WHATSAPP' && evolutionStatus.data?.status === 'connected' ? (
+            <label className="field">
+              <span>Grupo do WhatsApp</span>
+              <select
+                value={externalId}
+                onChange={(event) => {
+                  const groupId = event.target.value;
+                  const group = evolutionGroups.data?.find((item) => item.id === groupId);
+                  setExternalId(groupId);
+                  if (group && !name.trim()) setName(group.name);
+                }}
+                disabled={evolutionGroups.isPending || evolutionGroups.isError}
+                required
+              >
+                <option value="">
+                  {evolutionGroups.isPending
+                    ? 'Carregando grupos…'
+                    : evolutionGroups.data?.length
+                      ? 'Selecione um grupo'
+                      : 'Nenhum grupo encontrado'}
+                </option>
+                {evolutionGroups.data?.map((group) => (
+                  <option key={group.id} value={group.id}>{group.name}</option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <label className="field"><span>ID externo <small>{channel === 'TELEGRAM' ? 'Ex.: -100123…' : 'ID do grupo'}</small></span><input value={externalId} onChange={(event) => setExternalId(event.target.value)} minLength={2} maxLength={160} required /></label>
+          )}
         </div>
         <div className="form-actions"><button type="button" className="button ghost" onClick={() => setShowForm(false)}>Cancelar</button><button className="button primary" type="submit" disabled={create.isPending}>{create.isPending ? 'Adicionando…' : 'Adicionar destino'}</button></div>
       </form>}
@@ -74,4 +133,20 @@ export function DestinationsPage() {
       <aside className="operational-note"><RadioTower size={20} /><div><strong>Antes de publicar no WhatsApp</strong><p>Confirme que a instância da Evolution API está conectada e que o grupo consentiu em receber ofertas.</p></div></aside>
     </div>
   );
+}
+
+function evolutionStatusMessage(status?: EvolutionStatusDto) {
+  if (!status) return 'Não foi possível consultar a Evolution API.';
+  switch (status.status) {
+    case 'connected':
+      return `Instância ${status.instance} conectada. Selecione abaixo um dos grupos sincronizados.`;
+    case 'connecting':
+      return `Instância ${status.instance} conectando. Aguarde alguns segundos.`;
+    case 'disconnected':
+      return `Instância ${status.instance} desconectada. Abra o Evolution Manager e conecte o número pelo QR Code.`;
+    case 'disabled':
+      return 'Evolution API ainda não foi configurada no servidor.';
+    default:
+      return 'Evolution API indisponível no momento. Verifique o serviço e tente novamente.';
+  }
 }
