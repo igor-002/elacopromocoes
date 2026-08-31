@@ -12,6 +12,13 @@ import { OfferDetailPage } from './pages/OfferDetailPage';
 import { OfferFormPage } from './pages/OfferFormPage';
 import { OffersPage } from './pages/OffersPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PublicSite } from './pages/PublicSite';
+
+const publicHosts = new Set(['elaco.com.br', 'www.elaco.com.br']);
+
+export function isPublicHostname(hostname: string) {
+  return publicHosts.has(hostname.toLowerCase());
+}
 
 function ProtectedLayout() {
   const location = useLocation();
@@ -43,7 +50,15 @@ function ProtectedLayout() {
   );
 }
 
-export function App() {
+export function App({
+  hostname = window.location.hostname,
+  publicPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).has('preview'),
+}: {
+  hostname?: string;
+  publicPreview?: boolean;
+} = {}) {
+  if (publicPreview || isPublicHostname(hostname)) return <PublicSite />;
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
