@@ -25,3 +25,4 @@ Observations captured during task-oriented work.
 **Principle:** Discover port ownership and proxy boundaries before deploying a web stack into any control-panel-managed server.
 
 - 2026-08-31 Evolution readiness checkpoint: no observations.
+- 2026-09-01 status-document checkpoint: no observations.

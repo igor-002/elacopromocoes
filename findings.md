@@ -55,3 +55,15 @@
 - Assinatura: trilha de estados inspirada em etiquetas de preço destacáveis.
 - Paleta: porcelana fria, grafite, azul operacional e laranja de oferta; evitar visual financeiro genérico.
 - Tipos: Space Grotesk para títulos, Instrument Sans para interface e IBM Plex Mono para preços/IDs.
+
+## Auditoria de retomada — 2026-09-01
+- O Git local está em `main`, com o commit `5c58c15` no topo; somente `image.png` permanece local e fora do versionamento.
+- Entregas versionadas: MVP administrativo, landing pública da Elaco e status/descoberta de grupos da Evolution API.
+- A última verificação conhecida da VPS mostrou PostgreSQL, Redis, API, painel e Evolution saudáveis, com os quatro domínios respondendo por HTTPS.
+- A instância WhatsApp ainda depende da compra do número, criação/conexão da instância `radar` e leitura do QR Code.
+- `compose.prod.yml` ainda não injeta `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET`, `AMAZON_PARTNER_TAG` e `AMAZON_MARKETPLACE` na API, embora a importação Amazon exista no código e esteja descrita no README.
+- A landing atual apresenta a marca, mas ainda não possui catálogo público, páginas individuais de ofertas, CTA de entrada no grupo nem medição do funil.
+- Para reduzir risco contratual e melhorar medição, o caminho recomendado é WhatsApp → página da oferta na Elaco → clique consciente no link de afiliado, sem redirecionamento automático.
+- Verificação ao vivo em 2026-09-01: `elaco.com.br`, `admin.elaco.com.br/login`, `api.elaco.com.br/api/health` e `evolution.elaco.com.br` responderam HTTP 200.
+- O healthcheck público retornou banco e Redis ativos, Evolution configurada, Telegram desativado e OpenAI desativado.
+- O bundle público contém a landing da Elaco, mas não contém o texto do seletor de grupos; portanto, o commit `5c58c15` ainda precisa ser implantado na VPS.

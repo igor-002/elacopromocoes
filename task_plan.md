@@ -4,7 +4,7 @@
 Entregar um MVP executável para cadastrar, revisar, agendar e publicar ofertas da Amazon e Mercado Livre em Telegram e WhatsApp.
 
 ## Current Phase
-Phase 5
+Phase 6
 
 ## Phases
 
@@ -37,6 +37,22 @@ Phase 5
 - [ ] Entregar instruções de uso
 - **Status:** complete
 
+### Phase 6: Go-live dos canais
+- [x] Publicar landing, painel, API e Evolution com HTTPS
+- [x] Implementar status real e descoberta de grupos da Evolution
+- [ ] Implantar o commit `5c58c15` na VPS
+- [ ] Ativar número, conectar instância `radar` e sincronizar o primeiro grupo
+- [ ] Configurar credenciais Amazon no Compose de produção
+- [ ] Realizar a primeira publicação real controlada
+- **Status:** in_progress
+
+### Phase 7: Catálogo público e aquisição
+- [ ] Criar páginas públicas de catálogo e detalhe de oferta
+- [ ] Implementar CTA consentido para entrada no grupo
+- [ ] Adicionar métricas de origem, clique, entrada e retenção
+- [ ] Executar plano inicial de aquisição orgânica e parcerias
+- **Status:** pending
+
 ## Decisions Made
 | Decision | Rationale |
 |----------|-----------|
@@ -63,6 +79,7 @@ Phase 5
 | Vite não consumiu named exports do pacote CommonJS de contratos | 1 | Alias frontend aponta ao TypeScript fonte; backend mantém CommonJS compilado |
 | `npm audit` não alcançou registry no sandbox | 1 | Repetir auditoria com rede escalada |
 | Prisma 6.12 precisou baixar engine novo no sandbox | 2 | Repetir geração escalada após downgrade de segurança |
+| `git diff --cached --check` encontrou espaços finais no novo Markdown | 1 | Trocar quebras forçadas por linhas em branco e repetir a validação |
 
 ## Parallel Roadmap
 | Owner | Files | Deliverable |

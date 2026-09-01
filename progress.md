@@ -54,3 +54,15 @@
 | What's the goal? | MVP completo de publicação de ofertas |
 | What have I learned? | See findings.md |
 | What have I done? | Planejamento persistente iniciado |
+
+## Session: 2026-09-01
+
+### Auditoria e documento de retomada
+- **Status:** complete
+- Estado local, GitHub, Compose e integrações auditados.
+- Quatro domínios públicos verificados com HTTP 200.
+- API confirmou PostgreSQL e Redis ativos; Evolution configurada; Telegram e OpenAI desativados.
+- Bundle da VPS confirmou que a landing está publicada, mas o commit `5c58c15` ainda não foi implantado.
+- Pendência de variáveis Amazon no `compose.prod.yml` identificada.
+- Estratégia de aquisição, conformidade, plano de 30 dias e checklist de go-live consolidados.
+- Arquivo criado: `STATUS_E_PROXIMOS_PASSOS.md`.
